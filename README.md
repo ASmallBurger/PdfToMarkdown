@@ -42,7 +42,7 @@ Key design goals:
 Requires Python 3.10 or newer.
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/ASmallBurger/PdfToMarkdown
 cd PdfToMarkdown
 pip install -r requirements.txt
 ```
