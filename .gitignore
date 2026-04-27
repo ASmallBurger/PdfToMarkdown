@@ -1,0 +1,15 @@
+CLAUDE.md
+DESIGN.md
+design.md
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.env
+*.log
+output/
