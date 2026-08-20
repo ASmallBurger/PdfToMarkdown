@@ -125,7 +125,7 @@ def _column_index(x: float, columns: list[tuple[float, float]]) -> int:
 # ---------------------------------------------------------------------------
 
 def _body_font_size(chars: list[dict]) -> float:
-    """Median character font size across the page — used as body baseline."""
+    """Median character font size across the page, used as the body baseline."""
     sizes = [c["size"] for c in chars if c.get("size", 0) > 0]
     if not sizes:
         return 10.0
@@ -444,8 +444,8 @@ def extract_page(
 def extract_pdf(path: str, progress_cb=None) -> list[PageContent]:
     """
     Two-pass extraction:
-      Pass 1 — collect all chars to build document-level body size + heading map.
-      Pass 2 — extract each page using the shared map.
+      Pass 1: collect all chars to build document-level body size + heading map.
+      Pass 2: extract each page using the shared map.
     progress_cb(current_page, total_pages) is called after each page.
     """
     pages: list[PageContent] = []

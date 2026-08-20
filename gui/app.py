@@ -1,5 +1,5 @@
 """
-PdfToMarkdown — GUI.
+PdfToMarkdown GUI.
 
 A modern Tkinter UI built on customtkinter, with drag-and-drop support via
 tkinterdnd2 and a file queue showing per-file status.
@@ -169,6 +169,9 @@ class App(ctk.CTk, TkinterDnD.DnDWrapper):
         ctk.CTkButton(
             btn_row, text="Clear queue", width=110,
             fg_color="transparent", border_width=1,
+            text_color=("gray10", "#DCE4EE"),
+            border_color=("gray70", "gray40"),
+            hover_color=("gray90", "gray25"),
             command=self._clear_queue,
         ).grid(row=0, column=2, padx=6)
 
@@ -259,6 +262,9 @@ class App(ctk.CTk, TkinterDnD.DnDWrapper):
         self._open_out_btn = ctk.CTkButton(
             action_frame, text="Open output", width=110,
             fg_color="transparent", border_width=1,
+            text_color=("gray10", "#DCE4EE"),
+            border_color=("gray70", "gray40"),
+            hover_color=("gray90", "gray25"),
             command=self._open_output_folder,
         )
         self._open_out_btn.grid(row=0, column=2, padx=(4, 0))
@@ -572,7 +578,7 @@ class App(ctk.CTk, TkinterDnD.DnDWrapper):
             messagebox.showwarning(
                 "Conversion finished with errors",
                 f"{ok} succeeded, {bad} failed.\n\n"
-                "Check the queue list — errored files have a red mark.",
+                "Check the queue list: errored files have a red mark.",
             )
 
     # ------------------------------------------------------------------

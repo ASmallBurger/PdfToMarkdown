@@ -56,7 +56,7 @@ def process_folder(
     Convert all PDFs in src_dir to Markdown files in out_dir.
 
     file_progress_cb(completed_files, total_files)
-    page_progress_cb(current_page, total_pages)  — reset per file
+    page_progress_cb(current_page, total_pages)  (reset for each file)
     """
     src_dir = Path(src_dir)
     pdfs = sorted(src_dir.glob("*.pdf"))

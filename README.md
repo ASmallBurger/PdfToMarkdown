@@ -2,24 +2,60 @@
 
 A CPU-only PDF-to-Markdown converter built for AI data extraction pipelines.
 Reconstructs reading order, detects heading hierarchy, extracts bordered tables,
-and processes PDFs in bulk — all locally, with no GPU, no Java, no Ghostscript,
+and processes PDFs in bulk, all locally, with no GPU, no Java, no Ghostscript,
 and no data ever leaving your machine.
 
 ---
 
-## Why this exists
+## Screenshots
 
-Most PDF-to-text tools dump a wall of unstructured text that's painful to feed
-into an LLM. PdfToMarkdown reconstructs the document's logical structure
-(headings, paragraphs, lists, tables) so the output is immediately useful as
-context for retrieval, embedding, or fine-tuning.
+The conversion queue mid-run, with per-file status marks and the combined
+progress bar:
+
+![PdfToMarkdown GUI in light mode](docs/screenshot-light.png)
+
+The same window using the built-in dark theme:
+
+![PdfToMarkdown GUI in dark mode](docs/screenshot-dark.png)
+
+---
+
+## Why I built this
+
+I kept hitting the same wall from two different directions.
+
+**I wanted these conversions to stay private.** The PDFs I most wanted to
+convert were the ones I was least willing to upload: statements, letters,
+contracts, paid-for research. Every "drop your PDF here" website is somebody
+else's server, and the honest answer to *"what happens to my file after this?"*
+is that you have no way to know. I wanted a converter where that question has a
+verifiable answer, so this one has no networking code in it at all: no uploads,
+no telemetry, no API calls, nothing to audit because there's nothing there.
+Everything runs on the CPU, on your machine, offline.
+
+**I use Obsidian heavily, and a vault is only as good as what you can get into
+it.** A PDF sitting in a folder is a dead end. You can't link it, backlink it,
+search it properly, or fold it into a note. Markdown is the native currency of
+that whole workflow. So the target was never just "extract the text"; it was
+"produce a file I'd actually want in my vault": real `#` headings that populate
+the outline pane, real tables, paragraphs that survived the trip intact.
+
+That second requirement is what made this more interesting to build than it
+looks. Pulling characters out of a PDF is a solved problem. The hard part is
+that **a PDF has no structure to extract**. It stores glyphs at coordinates,
+not headings and paragraphs. Deciding that *this* 18 pt line is an H2 while
+*that* one is just an emphasised sentence means inferring the document's
+hierarchy from font sizes, spacing, and layout geometry. The two-pass heading
+detection and column-aware reading-order reconstruction described below are
+where most of the real work went.
 
 Key design goals:
 
-- **CPU-only** — runs on any laptop, no accelerators required
-- **Offline** — nothing is uploaded; useful for confidential documents
-- **Spec-grounded** — based on PDF/A specification principles ([pdfa.org](https://pdfa.org/))
-- **Bulk-ready** — point it at a folder, walk away, come back to a folder of `.md` files
+- **Private by construction**: no network code in the codebase; files never leave your machine
+- **CPU-only**: runs on any laptop; no GPU, no Java, no Ghostscript
+- **Obsidian-ready**: output drops straight into a vault as first-class Markdown
+- **Spec-grounded**: based on PDF/A specification principles ([pdfa.org](https://pdfa.org/))
+- **Bulk-ready**: point it at a folder, walk away, come back to a folder of `.md` files
 
 ---
 
@@ -30,10 +66,10 @@ Key design goals:
 | **Reading order reconstruction** | Detects multi-column layouts via x-coordinate gap analysis, then sorts blocks top-to-bottom within each column. |
 | **Heading hierarchy (H1 / H2 / H3)** | Two-pass scan: collects every character's font size across the whole document, ranks unique sizes, and assigns the largest to H1, next to H2, third to H3. Falls back to bold-text and ALL-CAPS detection. |
 | **Paragraph segmentation** | Splits on large vertical gaps **or** ≥ 8 % font-size changes between consecutive lines. |
-| **Bordered table extraction** | Uses pdfplumber's lattice strategy (looks for actual ruling lines) — no Java or Ghostscript dependency. |
+| **Bordered table extraction** | Uses pdfplumber's lattice strategy (looks for actual ruling lines), so no Java or Ghostscript dependency. |
 | **List detection** | Recognises bullet (`•‣●◦–-*`) and numbered (`1.`, `1)`) prefixes. |
 | **Bulk processing** | Drop a folder of PDFs in, get a folder of Markdown files out, with per-file and per-page progress. |
-| **GUI + CLI** | Tkinter GUI for manual use, headless `--cli` mode for scripting and automation. |
+| **GUI + CLI** | Drag-and-drop desktop GUI (customtkinter) for manual use, headless `--cli` mode for scripting and automation. |
 
 ---
 
@@ -47,11 +83,15 @@ cd PdfToMarkdown
 pip install -r requirements.txt
 ```
 
-That's it. Three pure-Python dependencies, all CPU-only:
+That's it. Five pure-Python dependencies, all CPU-only:
 
-- `pdfplumber` ≥ 0.11
-- `pdfminer.six` ≥ 20221105
-- `Pillow` ≥ 10.0
+| Package | Purpose |
+|---|---|
+| `pdfplumber` ≥ 0.11 | PDF parsing (wraps pdfminer.six) |
+| `pdfminer.six` ≥ 20221105 | Low-level glyph/layout access |
+| `Pillow` ≥ 10.0 | Image handling for pdfplumber |
+| `customtkinter` ≥ 5.2 | Themed GUI widgets |
+| `tkinterdnd2` ≥ 0.4 | Drag-and-drop support |
 
 No Java. No Ghostscript. No GPU. No external services.
 
@@ -67,14 +107,21 @@ python main.py
 
 A window appears with:
 
-- A **source** picker (single PDF *or* a folder full of PDFs)
-- An **output folder** picker
-- A "page-break markers" toggle
-- Live progress bars (file-level and page-level)
-- A scrolling log of what's being processed
+- A **drag-and-drop zone**: drop individual PDFs or a whole folder onto it
+  (browse buttons are there too)
+- An **output folder** picker, remembered between sessions
+- A **conversion queue** showing every file with a live status mark
+  (○ pending · ▶ converting · ✓ done · ✕ failed) and its page count
+- A single labelled progress bar: *"File 2 of 5 · Page 3 of 12"*
+- A **Light / Dark / System** theme toggle
+- An **Open output** button that reveals the results in your file manager
 
-The conversion runs in a background thread, so the UI stays responsive even on
-hundred-page PDFs.
+Conversion runs on a background thread, so the window stays responsive on
+hundred-page PDFs. Failures are isolated per file: one corrupt or
+password-protected PDF marks that row red and the queue carries on.
+
+Your last-used folders, theme, and options are saved to
+`~/.pdftomarkdown_prefs.json` so the app opens where you left off.
 
 ### CLI mode
 
@@ -97,14 +144,14 @@ Each input `*.pdf` becomes `*.md` in the output directory.
 
 ```
 PdfToMarkdown/
-├── main.py                # Entry point — GUI launcher and --cli dispatcher
+├── main.py                # Entry point: GUI launcher and --cli dispatcher
 ├── requirements.txt
 ├── parser/
 │   ├── extractor.py       # Two-pass PDF extraction; reading order; headings; tables
 │   ├── converter.py       # PageContent → Markdown string
 │   └── processor.py       # Bulk-file orchestration + progress callbacks
 └── gui/
-    └── app.py             # Tkinter window (thread-safe via queue.Queue)
+    └── app.py             # customtkinter window, drag-drop, queue (thread-safe)
 ```
 
 ---
@@ -115,15 +162,15 @@ Most converters use a fixed font-size threshold (e.g. "anything ≥ 18 pt is a
 heading"), which falls apart on documents with non-standard sizing.
 PdfToMarkdown does it relatively, in two passes:
 
-1. **Pass 1** — read every character on every page, compute the median size
+1. **Pass 1**: read every character on every page, compute the median size
    (this is the body text baseline), then collect every distinct size larger
    than the baseline.
-2. **Pass 2** — cluster nearby sizes (within 8 %), sort the clusters
+2. **Pass 2**: cluster nearby sizes (within 8 %), sort the clusters
    descending, and map them to heading levels: largest → H1, next → H2, third
    → H3.
 
 So if your document has 22-pt section titles and 16-pt subheadings, those
-become H1 and H2 — even though neither matches a hardcoded threshold.
+become H1 and H2, even though neither matches a hardcoded threshold.
 
 A bold-only fallback catches headings that are body-sized but visually
 emphasised (e.g. inline section labels).
@@ -140,7 +187,7 @@ guesswork that "stream" strategies need.
 Words that fall inside a detected table's bounding box are excluded from the
 text-block extraction, so you never get duplicated content.
 
-Currently borderless tables are not detected as tables — they fall through to
+Currently borderless tables are not detected as tables. They fall through to
 the regular text-extraction path.
 
 ---
