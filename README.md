@@ -73,7 +73,19 @@ Key design goals:
 
 ---
 
-## Installation
+## Download
+
+Prebuilt desktop builds are published on the
+[Releases page](https://github.com/ASmallBurger/PdfToMarkdown/releases/latest).
+Download the archive for your platform, unzip it, and run the app. No Python
+installation and no setup required.
+
+> The first release has not been published yet. Until then, use
+> [Run from source](#run-from-source) below.
+
+---
+
+## Run from source
 
 Requires Python 3.10 or newer.
 
