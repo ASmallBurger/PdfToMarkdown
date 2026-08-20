@@ -88,9 +88,6 @@ The Windows build is a folder containing `PdfToMarkdown.exe` plus an
 > Choose **More info** then **Run anyway**. Signing requires a paid
 > certificate; see [Limitations](#limitations).
 
-> The first release has not been published yet. Until then, use
-> [Run from source](#run-from-source) below.
-
 ---
 
 ## Run from source
