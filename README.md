@@ -80,6 +80,14 @@ Prebuilt desktop builds are published on the
 Download the archive for your platform, unzip it, and run the app. No Python
 installation and no setup required.
 
+The Windows build is a folder containing `PdfToMarkdown.exe` plus an
+`_internal` directory. Keep them together and launch the `.exe`.
+
+> **First launch on Windows.** The executable is not code-signed, so
+> SmartScreen will show a "Windows protected your PC" dialog the first time.
+> Choose **More info** then **Run anyway**. Signing requires a paid
+> certificate; see [Limitations](#limitations).
+
 > The first release has not been published yet. Until then, use
 > [Run from source](#run-from-source) below.
 
@@ -106,6 +114,31 @@ That's it. Five pure-Python dependencies, all CPU-only:
 | `tkinterdnd2` ≥ 0.4 | Drag-and-drop support |
 
 No Java. No Ghostscript. No GPU. No external services.
+
+### Building the executable
+
+```bash
+pip install pyinstaller
+pyinstaller PdfToMarkdown.spec --noconfirm --clean
+```
+
+The result lands in `dist/PdfToMarkdown/`.
+
+[`PdfToMarkdown.spec`](PdfToMarkdown.spec) handles three things that a plain
+`pyinstaller main.py` gets wrong:
+
+- **customtkinter assets.** Its themes, fonts, and icons live under `assets/`
+  and are read relative to the package at runtime. PyInstaller has no hook for
+  the package, so they are declared explicitly.
+- **The tkdnd Tcl extension.** tkinterdnd2 appends `tkdnd/<platform>` to Tcl's
+  `auto_path` at import time. Only the host platform's build is bundled, which
+  keeps about 1.3 MB of other-OS binaries out of the output.
+- **pygame.** `pdfminer.ccitt` imports it inside a debug bitmap-viewer class
+  that normal decoding never reaches, but static analysis still pulls the whole
+  library in. Excluding it saves roughly 14 MB.
+
+The spec detects the host platform, so it should also work on macOS and Linux,
+though only the Windows build has been tested.
 
 ---
 
@@ -215,6 +248,9 @@ the regular text-extraction path.
 - **Math/equations** are extracted as plain text in whatever Unicode the PDF
   embeds; no LaTeX reconstruction.
 - **Footnotes and headers/footers** are not separated from body text.
+- **The released binary is unsigned**, so Windows SmartScreen and macOS
+  Gatekeeper will warn on first launch. Code-signing certificates are a
+  recurring paid cost and are not in place yet.
 
 ---
 
