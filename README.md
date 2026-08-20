@@ -218,4 +218,6 @@ the regular text-extraction path.
 
 ## License
 
-TBD.
+Released under the [MIT License](LICENSE). You are free to use, modify,
+and distribute this software, including commercially, provided the copyright
+notice is retained.
